@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-    <title>Kawaii Fruit Merge (Local)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#FFF3E0">
+    <title>Kawaii Fruit Merge</title>
+    
+    <link rel="manifest" href="manifest.json">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
@@ -28,10 +35,11 @@
             max-width: 450px; 
             max-height: 850px;
             background: rgba(255, 255, 255, 0.5);
-            border-radius: 0 0 24px 24px;
+            /* Visual borders */
             border-left: 16px solid #8D6E63;
             border-right: 16px solid #8D6E63;
             border-bottom: 16px solid #6D4C41;
+            border-radius: 0 0 24px 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             overflow: hidden;
         }
@@ -40,9 +48,11 @@
             display: block;
             width: 100%;
             height: 100%;
-            image-rendering: -webkit-optimize-contrast;
+            /* Ensure canvas fills container exactly */
+            object-fit: contain; 
         }
 
+        /* UI Animations */
         @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
@@ -55,24 +65,59 @@
             100% { transform: scale(1); opacity: 1; }
         }
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .menu-btn {
+            background: white;
+            border: 2px solid #FEF3C7;
+            color: #F59E0B;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+        .menu-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col items-center justify-center overflow-hidden">
     
-    <div class="absolute top-4 w-full max-w-[450px] px-6 flex justify-between items-start z-20 pointer-events-none">
-        <div class="bg-white/90 backdrop-blur px-5 py-2 rounded-2xl shadow-lg border-2 border-amber-100 flex flex-col items-center">
-            <span class="text-[10px] font-bold text-amber-800 uppercase tracking-widest">Score</span>
-            <span class="text-3xl font-bold text-amber-500" id="score">0</span>
-        </div>
-        <div class="bg-white/90 backdrop-blur px-4 py-2 rounded-2xl shadow-lg border-2 border-amber-100 flex flex-col items-center">
-            <span class="text-[10px] font-bold text-amber-800 uppercase tracking-widest mb-1">Next</span>
-            <div class="w-10 h-10 flex items-center justify-center relative">
-                <img class="w-full h-full object-contain drop-shadow-sm animate-float" id="next-fruit-img" style="clip-path: circle(50%); display: block;">
+    <div class="absolute top-2 w-full max-w-[500px] px-4 flex justify-between items-start z-30 pointer-events-none">
+        
+        <div class="pointer-events-auto relative">
+            <button id="btn-menu" class="menu-btn w-12 h-12 flex items-center justify-center">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+            
+            <div id="menu-dropdown" class="absolute top-14 left-0 bg-white/95 backdrop-blur rounded-2xl p-3 shadow-xl border-2 border-amber-100 flex flex-col gap-3 transition-all duration-200 opacity-0 scale-95 pointer-events-none origin-top-left">
+                <button id="btn-audio" class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-amber-50 text-amber-600 font-bold whitespace-nowrap">
+                    <span class="material-symbols-outlined" id="icon-audio">volume_up</span>
+                    <span>Sound</span>
+                </button>
+                <button id="btn-reset" class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-amber-50 text-amber-600 font-bold whitespace-nowrap">
+                    <span class="material-symbols-outlined">refresh</span>
+                    <span>Reset Game</span>
+                </button>
             </div>
         </div>
+
+        <div class="flex gap-2">
+            <div class="bg-white/90 backdrop-blur px-4 py-2 rounded-2xl shadow-md border-2 border-amber-100 flex flex-col items-center min-w-[80px]">
+                <span class="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Score</span>
+                <span class="text-2xl font-bold text-amber-500" id="score">0</span>
+            </div>
+            
+            <div class="bg-white/90 backdrop-blur px-3 py-2 rounded-2xl shadow-md border-2 border-amber-100 flex flex-col items-center">
+                <span class="text-[9px] font-bold text-amber-800 uppercase tracking-widest mb-1">Next</span>
+                <div class="w-7 h-7 flex items-center justify-center relative">
+                    <img class="w-full h-full object-contain drop-shadow-sm animate-float" id="next-fruit-img" style="clip-path: circle(50%); display: block;">
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-fullscreen" class="menu-btn w-12 h-12 flex items-center justify-center pointer-events-auto">
+            <span class="material-symbols-outlined" id="icon-fullscreen">fullscreen</span>
+        </button>
     </div>
 
-    <div class="w-full h-full flex items-center justify-center p-2 sm:p-4">
+    <div class="w-full h-full flex items-center justify-center p-0 sm:p-4">
         <div id="game-container">
             <canvas id="world" width="450" height="850"></canvas>
             
@@ -80,21 +125,12 @@
                 <span class="absolute right-2 -top-6 bg-red-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">DANGER</span>
             </div>
             
-            <div class="absolute top-[25%] w-full text-center pointer-events-none transition-opacity duration-500 opacity-0" id="hint" style="opacity: 0;">
+            <div class="absolute top-[30%] w-full text-center pointer-events-none transition-opacity duration-500 opacity-0" id="hint">
                 <span class="bg-black/20 text-white px-4 py-2 rounded-full text-sm font-bold backdrop-blur-sm">
                     Drag to Aim • Release to Drop
                 </span>
             </div>
         </div>
-    </div>
-
-    <div class="absolute bottom-6 flex gap-4 z-20 pointer-events-auto">
-        <button class="bg-white hover:bg-amber-50 text-amber-500 p-4 rounded-full shadow-xl border-2 border-amber-100 transition-transform active:scale-95 group" id="btn-reset">
-            <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">refresh</span>
-        </button>
-        <button class="bg-white hover:bg-amber-50 text-amber-500 p-4 rounded-full shadow-xl border-2 border-amber-100 transition-transform active:scale-95" id="btn-audio">
-            <span class="material-symbols-outlined" id="icon-audio">volume_up</span>
-        </button>
     </div>
 
     <div class="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 hidden" id="modal-gameover">
@@ -114,68 +150,55 @@
 
     <script>
     (function() {
-        const LOGICAL_WIDTH = 400;
-        const LOGICAL_HEIGHT = 700;
+        // MATCH LOGICAL DIMENSIONS TO CANVAS DIMENSIONS EXACTLY
+        // This ensures the physics floor matches the visual floor
+        const LOGICAL_WIDTH = 450; 
+        const LOGICAL_HEIGHT = 850;
 
-        // Mapped from your local files (Smallest -> Largest)
-        // 0: Cherry, 1: Strawberry, 2: Plum, 3: Orange, 4: Tomato, 
-        // 5: Apple, 6: Pear, 7: Peach, 8: Pineapple, 9: Kiwi, 10: Watermelon
         const FRUIT_IMAGES = [
-            "cherry.jpg",
-            "strawberry.jpg",
-            "plum.jpg",
-            "orange.jpg",
-            "tomato.jpg",
-            "apple.jpg",
-            "pear.jpg",
-            "peach.jpg",
-            "pineapple.jpg",
-            "kiwi.jpg",
-            "watermelon.jpg"
+            "cherry.jpg", "strawberry.jpg", "plum.jpg", "orange.jpg", "tomato.jpg", 
+            "apple.jpg", "pear.jpg", "peach.jpg", "pineapple.jpg", "kiwi.jpg", "watermelon.jpg"
         ];
 
         const FRUITS = [
-            { r: 16,  score: 0,    color: '#FF5252' }, // Cherry
-            { r: 24,  score: 2,    color: '#FF4081' }, // Strawberry
-            { r: 32,  score: 4,    color: '#E040FB' }, // Plum
-            { r: 40,  score: 8,    color: '#FFAB40' }, // Orange
-            { r: 48,  score: 16,   color: '#FF6E40' }, // Tomato
-            { r: 58,  score: 32,   color: '#FF5252' }, // Apple
-            { r: 68,  score: 64,   color: '#CDDC39' }, // Pear
-            { r: 80,  score: 128,  color: '#F8BBD0' }, // Peach
-            { r: 94,  score: 256,  color: '#FFEB3B' }, // Pineapple
-            { r: 110, score: 512,  color: '#69F0AE' }, // Kiwi
-            { r: 130, score: 1024, color: '#4CAF50' }  // Watermelon
+            { r: 16,  score: 0,    color: '#FF5252' }, 
+            { r: 24,  score: 2,    color: '#FF4081' }, 
+            { r: 32,  score: 4,    color: '#E040FB' }, 
+            { r: 40,  score: 8,    color: '#FFAB40' }, 
+            { r: 48,  score: 16,   color: '#FF6E40' }, 
+            { r: 58,  score: 32,   color: '#FF5252' }, 
+            { r: 68,  score: 64,   color: '#CDDC39' }, 
+            { r: 80,  score: 128,  color: '#F8BBD0' }, 
+            { r: 94,  score: 256,  color: '#FFEB3B' }, 
+            { r: 110, score: 512,  color: '#69F0AE' }, 
+            { r: 130, score: 1024, color: '#4CAF50' }  
         ];
 
         const Game = {
-            engine: null,
-            runner: null,
-            canvas: null,
-            ctx: null,
-            scale: 1,
-            offsetX: 0,
-            offsetY: 0,
-            assets: [],
-            score: 0,
-            gameOver: false,
-            isDropping: false,
-            cooldown: false,
+            engine: null, runner: null, canvas: null, ctx: null,
+            scale: 1, offsetX: 0, offsetY: 0,
+            assets: [], score: 0, gameOver: false, isDropping: false, cooldown: false,
             dropper: { x: LOGICAL_WIDTH / 2, current: 0, next: 0 },
-            audioEnabled: true,
-            dangerTimer: 0,
-            isDragging: false,
-            floorBody: null,
+            audioEnabled: true, dangerTimer: 0, isDragging: false, menuOpen: false,
 
             init: async function() {
                 this.canvas = document.getElementById('world');
                 this.ctx = this.canvas.getContext('2d');
 
-                document.getElementById('btn-reset').onclick = () => this.reset();
+                // UI Event Listeners
+                document.getElementById('btn-reset').onclick = () => { this.reset(); this.toggleMenu(false); };
                 document.getElementById('btn-retry').onclick = () => this.reset();
+                document.getElementById('btn-menu').onclick = () => this.toggleMenu();
+                document.getElementById('btn-fullscreen').onclick = () => this.toggleFullscreen();
                 
+                // Close menu when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#btn-menu') && !e.target.closest('#menu-dropdown')) {
+                        this.toggleMenu(false);
+                    }
+                });
+
                 await this.loadImages();
-                
                 this.setupPhysics();
                 this.setupInputs();
                 this.setupAudio();
@@ -194,24 +217,38 @@
                 this.reset();
             },
 
+            toggleMenu: function(forceState) {
+                const menu = document.getElementById('menu-dropdown');
+                if (typeof forceState !== 'undefined') this.menuOpen = forceState;
+                else this.menuOpen = !this.menuOpen;
+
+                if (this.menuOpen) {
+                    menu.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                } else {
+                    menu.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                }
+            },
+
+            toggleFullscreen: function() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch((err) => {
+                        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            },
+
             loadImages: function() {
                 return new Promise(resolve => {
                     let loaded = 0;
                     const total = FRUIT_IMAGES.length;
-                    
                     for(let i=0; i<total; i++) {
                         const img = new Image();
-                        img.onload = () => {
-                            this.assets[i] = img;
-                            loaded++;
-                            if (loaded === total) resolve();
-                        };
-                        img.onerror = () => {
-                            console.error(`Failed to load ${FRUIT_IMAGES[i]}`);
-                            this.assets[i] = null; // Will fallback to colored circle
-                            loaded++;
-                            if (loaded === total) resolve();
-                        };
+                        img.onload = () => { this.assets[i] = img; loaded++; if (loaded === total) resolve(); };
+                        img.onerror = () => { this.assets[i] = null; loaded++; if (loaded === total) resolve(); };
                         img.src = FRUIT_IMAGES[i];
                     }
                 });
@@ -219,22 +256,23 @@
 
             setupPhysics: function() {
                 const { Engine, World, Bodies, Runner, Events } = Matter;
-                
                 this.engine = Engine.create({
                     enableSleeping: true,
-                    gravity: { x: 0, y: 1.2 },
-                    positionIterations: 8,
-                    velocityIterations: 8
+                    gravity: { x: 0, y: 1.5 }, // Slightly heavier gravity for better feel
                 });
 
-                const thickness = 200; 
-                const wallOpts = { isStatic: true, friction: 0.5, restitution: 0.2, label: 'wall' };
+                const thickness = 100; 
+                // Wall Options
+                const wallOpts = { isStatic: true, friction: 0.8, restitution: 0.1, label: 'wall' };
                 
-                this.floorBody = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + thickness/2, LOGICAL_WIDTH + 400, thickness, wallOpts);
+                // FLOOR: Positioned so the top edge is exactly at LOGICAL_HEIGHT
+                // y = LOGICAL_HEIGHT + (thickness / 2)
+                const floor = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + thickness/2, LOGICAL_WIDTH + 200, thickness, wallOpts);
+                
                 const leftWall = Bodies.rectangle(-thickness/2, LOGICAL_HEIGHT/2, thickness, LOGICAL_HEIGHT * 2, wallOpts);
                 const rightWall = Bodies.rectangle(LOGICAL_WIDTH + thickness/2, LOGICAL_HEIGHT/2, thickness, LOGICAL_HEIGHT * 2, wallOpts);
                 
-                World.add(this.engine.world, [this.floorBody, leftWall, rightWall]);
+                World.add(this.engine.world, [floor, leftWall, rightWall]);
                 Events.on(this.engine, 'collisionStart', (e) => this.handleCollisions(e));
 
                 this.runner = Runner.create();
@@ -243,18 +281,28 @@
 
             resize: function() {
                 const container = document.getElementById('game-container');
-                const rect = container.getBoundingClientRect();
+                
+                // FIX 1: Use clientWidth/Height to get the inner size (inside the borders)
+                // This ensures the canvas matches the white area exactly.
+                const width = container.clientWidth;
+                const height = container.clientHeight;
                 const dpr = window.devicePixelRatio || 1;
                 
-                this.canvas.width = rect.width * dpr;
-                this.canvas.height = rect.height * dpr;
+                this.canvas.width = width * dpr;
+                this.canvas.height = height * dpr;
                 
-                const scaleX = rect.width / LOGICAL_WIDTH;
-                const scaleY = rect.height / LOGICAL_HEIGHT;
+                // Calculate scale to fit the logical dimensions
+                const scaleX = width / LOGICAL_WIDTH;
+                const scaleY = height / LOGICAL_HEIGHT;
                 this.scale = Math.min(scaleX, scaleY);
                 
-                this.offsetX = (rect.width - (LOGICAL_WIDTH * this.scale)) / 2;
-                this.offsetY = (rect.height - (LOGICAL_HEIGHT * this.scale)) / 2;
+                // Align horizontally center
+                this.offsetX = (width - (LOGICAL_WIDTH * this.scale)) / 2;
+                
+                // FIX 2: Align vertically to the BOTTOM
+                // Instead of centering ((height - logical)/2), we push it to the bottom.
+                // This removes the gap between the fruit and the floor on tall screens.
+                this.offsetY = height - (LOGICAL_HEIGHT * this.scale);
                 
                 this.ctx.setTransform(1, 0, 0, 1, 0, 0);
                 this.ctx.scale(dpr, dpr);
@@ -262,7 +310,6 @@
 
             setupInputs: function() {
                 const container = document.getElementById('game-container');
-                
                 const getPhysicsX = (clientX) => {
                     const rect = container.getBoundingClientRect();
                     const screenX = clientX - rect.left;
@@ -272,12 +319,15 @@
                 };
 
                 const handleStart = (x) => {
+                    if(this.menuOpen) return;
                     this.isDragging = true;
                     this.dropper.x = getPhysicsX(x);
                 };
+                
                 const handleMove = (x) => {
                     this.dropper.x = getPhysicsX(x);
                 };
+                
                 const handleEnd = () => {
                     if(this.isDragging) {
                         this.isDragging = false;
@@ -285,8 +335,9 @@
                     }
                 };
 
+                // Touch
                 container.addEventListener('touchstart', (e) => {
-                    if(e.target.tagName !== 'BUTTON') { e.preventDefault(); }
+                    if(e.target.tagName !== 'BUTTON' && !this.menuOpen) { e.preventDefault(); }
                     handleStart(e.touches[0].clientX);
                 }, { passive: false });
                 window.addEventListener('touchmove', (e) => {
@@ -294,10 +345,11 @@
                 }, { passive: false });
                 window.addEventListener('touchend', () => handleEnd());
 
+                // Mouse
                 container.addEventListener('mousedown', (e) => handleStart(e.clientX));
                 window.addEventListener('mousemove', (e) => {
                     if(this.isDragging) handleMove(e.clientX);
-                    else if(!this.gameOver) this.dropper.x = getPhysicsX(e.clientX);
+                    else if(!this.gameOver && !this.menuOpen) this.dropper.x = getPhysicsX(e.clientX);
                 });
                 window.addEventListener('mouseup', () => handleEnd());
             },
@@ -325,9 +377,6 @@
                     restitution: 0.2,
                     friction: 0.5,
                     density: 0.002,
-                    frictionAir: 0.02,
-                    angularDamping: 0.6,
-                    slop: 0.05
                 });
             },
 
@@ -349,7 +398,6 @@
 
                             World.remove(this.engine.world, [bodyA, bodyB]);
                             const newBody = this.createFruitBody(midX, midY, newType);
-                            Matter.Body.setVelocity(newBody, { x: (Math.random()-0.5), y: -1 });
                             World.add(this.engine.world, newBody);
 
                             this.score += FRUITS[newType].score;
@@ -365,7 +413,7 @@
             },
 
             drop: function() {
-                if(this.isDropping || this.cooldown || this.gameOver) return;
+                if(this.isDropping || this.cooldown || this.gameOver || this.menuOpen) return;
                 if(this.audioEnabled && Tone.context.state !== 'running') Tone.start();
 
                 this.isDropping = true;
@@ -383,9 +431,16 @@
                 }, 600);
             },
 
-            reset: function() {
+             reset: function() {
+                // Fix: Change 'false' to 'true' to keep static bodies (walls/floor)
                 Matter.Composite.clear(this.engine.world, true); 
                 
+                // Double check: manually remove any remaining 'fruit' bodies just in case
+                const bodies = Matter.Composite.allBodies(this.engine.world);
+                bodies.forEach(b => {
+                    if(b.label === 'fruit') Matter.World.remove(this.engine.world, b);
+                });
+
                 this.score = 0;
                 document.getElementById('score').innerText = 0;
                 this.gameOver = false;
@@ -445,8 +500,8 @@
                 this.ctx.translate(this.offsetX, this.offsetY);
                 this.ctx.scale(this.scale, this.scale);
 
-                // Dropper Line
-                if(!this.gameOver) {
+                // Guide Line
+                if(!this.gameOver && !this.menuOpen) {
                     this.ctx.beginPath();
                     this.ctx.moveTo(this.dropper.x, 30);
                     this.ctx.lineTo(this.dropper.x, LOGICAL_HEIGHT);
@@ -455,26 +510,24 @@
                     this.ctx.setLineDash([5, 5]);
                     this.ctx.stroke();
                     this.ctx.setLineDash([]);
+                
+                    // Ghost Fruit
+                    if(!this.isDropping) {
+                        const r = FRUITS[this.dropper.current].r;
+                        const asset = this.assets[this.dropper.current];
+                        this.ctx.globalAlpha = 0.6;
+                        this.drawSprite(this.dropper.x, 30, r, 0, FRUITS[this.dropper.current].color, asset);
+                        this.ctx.globalAlpha = 1.0;
+                    }
                 }
 
-                // Ghost
-                if(!this.isDropping && !this.gameOver) {
-                    const r = FRUITS[this.dropper.current].r;
-                    const visualR = r * 1.05;
-                    const asset = this.assets[this.dropper.current];
-                    this.ctx.globalAlpha = 0.6;
-                    this.drawSprite(this.dropper.x, 30, visualR, 0, FRUITS[this.dropper.current].color, asset);
-                    this.ctx.globalAlpha = 1.0;
-                }
-
-                // Fruits
+                // Render Bodies
                 const bodies = Matter.Composite.allBodies(this.engine.world);
                 bodies.forEach(b => {
                     if(b.label === 'fruit') {
                         const r = FRUITS[b.fruitType].r;
-                        const visualR = r * 1.05;
                         const asset = this.assets[b.fruitType];
-                        this.drawSprite(b.position.x, b.position.y, visualR, b.angle, FRUITS[b.fruitType].color, asset);
+                        this.drawSprite(b.position.x, b.position.y, r, b.angle, FRUITS[b.fruitType].color, asset);
                     }
                 });
 
@@ -490,7 +543,6 @@
                 this.ctx.arc(0, 0, radius, 0, Math.PI*2);
                 this.ctx.clip();
 
-                // Draw background color (behind the image or as fallback)
                 this.ctx.fillStyle = color;
                 this.ctx.fill();
 
